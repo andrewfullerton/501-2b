@@ -580,17 +580,17 @@ geeglm(LogCD4 ~ Treatment + Week + Age,
 
 ``` r
 models_all <- list(
-  "Compound Symmetry (GLS)" = gls(LogCD4 ~ Treatment + Week + Age, 
+  "GLS Compound Symmetry (SE)" = gls(LogCD4 ~ Treatment + Week + Age, 
                                   data = cd4, 
                                   correlation = corCompSymm(form = ~1 | ID)),
-  "Compound Symmetry (GEE GLM)" = geeglm(LogCD4 ~ Treatment + Week + Age, data = cd4, id = ID,
+  "GEE GLM Compound Symmetry (SE)" = geeglm(LogCD4 ~ Treatment + Week + Age, data = cd4, id = ID,
                                          family = gaussian, corstr = "exchangeable"),
-  "AR1 (GLS)" = gls(LogCD4 ~ Treatment + Week + Age,
+  "GLS AR1 (SE)" = gls(LogCD4 ~ Treatment + Week + Age,
                     data = cd4,
                     correlation = corAR1(form = ~1 | ID)),
-  "AR1 (GEE GLM)" = geeglm(LogCD4 ~ Treatment + Week + Age, data = cd4, id = ID, 
+  "GEE GLM AR1 (SE)" = geeglm(LogCD4 ~ Treatment + Week + Age, data = cd4, id = ID, 
                            family = gaussian, corstr = "ar1"),
-  "Unstructured (GEE GLM)" = geeglm(LogCD4 ~ Treatment + Week + Age, data = cd4, id = ID, 
+  "GEE GLM Unstructured (SE)" = geeglm(LogCD4 ~ Treatment + Week + Age, data = cd4, id = ID, 
                           family = gaussian, corstr = "unstructured")
 )
 
@@ -600,27 +600,27 @@ modelsummary::modelsummary(models_all,
                            statistic = "p = {p.value}")
 ```
 
-|             | Compound Symmetry (GLS) | Compound Symmetry (GEE GLM) | AR1 (GLS)      | AR1 (GEE GLM)  | Unstructured (GEE GLM) |
-|-------------|-------------------------|-----------------------------|----------------|----------------|------------------------|
-| (Intercept) | 2.484 (0.130)           | 2.484 (0.130)               | 2.473 (0.120)  | 2.486 (0.127)  | 2.538 (0.137)          |
-|             | p = \<0.001             | p = \<0.001                 | p = \<0.001    | p = \<0.001    | p = \<0.001            |
-| Treatment2  | 0.043 (0.074)           | 0.043 (0.067)               | 0.029 (0.067)  | 0.023 (0.066)  | 0.039 (0.065)          |
-|             | p = 0.559               | p = 0.520                   | p = 0.665      | p = 0.724      | p = 0.544              |
-| Treatment3  | 0.104 (0.073)           | 0.103 (0.070)               | 0.089 (0.067)  | 0.068 (0.068)  | 0.080 (0.094)          |
-|             | p = 0.157               | p = 0.142                   | p = 0.186      | p = 0.321      | p = 0.392              |
-| Treatment4  | 0.236 (0.073)           | 0.236 (0.072)               | 0.193 (0.067)  | 0.171 (0.070)  | 0.173 (0.069)          |
-|             | p = 0.001               | p = 0.001                   | p = 0.004      | p = 0.015      | p = 0.013              |
-| Week        | -0.010 (0.001)          | -0.010 (0.001)              | -0.008 (0.001) | -0.009 (0.001) | -0.013 (0.001)         |
-|             | p = \<0.001             | p = \<0.001                 | p = \<0.001    | p = \<0.001    | p = \<0.001            |
-| Age         | 0.011 (0.003)           | 0.011 (0.003)               | 0.010 (0.003)  | 0.010 (0.003)  | 0.011 (0.003)          |
-|             | p = \<0.001             | p = \<0.001                 | p = \<0.001    | p = \<0.001    | p = \<0.001            |
-| Num.Obs.    | 5036                    | 5036                        | 5036           | 5036           | 5036                   |
-| R2          | 0.022                   | 0.022                       | 0.021          | 0.018          | 0.017                  |
-| AIC         | 12239.3                 | 14951.5                     | 12396.1        | 14972.5        | 14979.1                |
-| BIC         | 12291.5                 | 14997.2                     | 12448.3        | 15018.1        | 15024.8                |
-| Log.Lik.    |                         | -7468.746                   |                | -7479.230      | -7482.571              |
-| F           |                         | 34.689                      |                | 20.382         | 33.989                 |
-| RMSE        | 1.07                    | 1.07                        | 1.07           | 1.07           | 1.07                   |
+|             | GLS Compound Symmetry (SE) | GEE GLM Compound Symmetry (SE) | GLS AR1 (SE)   | GEE GLM AR1 (SE) | GEE GLM Unstructured (SE) |
+|-------------|----------------------------|--------------------------------|----------------|------------------|---------------------------|
+| (Intercept) | 2.484 (0.130)              | 2.484 (0.130)                  | 2.473 (0.120)  | 2.486 (0.127)    | 2.538 (0.137)             |
+|             | p = \<0.001                | p = \<0.001                    | p = \<0.001    | p = \<0.001      | p = \<0.001               |
+| Treatment2  | 0.043 (0.074)              | 0.043 (0.067)                  | 0.029 (0.067)  | 0.023 (0.066)    | 0.039 (0.065)             |
+|             | p = 0.559                  | p = 0.520                      | p = 0.665      | p = 0.724        | p = 0.544                 |
+| Treatment3  | 0.104 (0.073)              | 0.103 (0.070)                  | 0.089 (0.067)  | 0.068 (0.068)    | 0.080 (0.094)             |
+|             | p = 0.157                  | p = 0.142                      | p = 0.186      | p = 0.321        | p = 0.392                 |
+| Treatment4  | 0.236 (0.073)              | 0.236 (0.072)                  | 0.193 (0.067)  | 0.171 (0.070)    | 0.173 (0.069)             |
+|             | p = 0.001                  | p = 0.001                      | p = 0.004      | p = 0.015        | p = 0.013                 |
+| Week        | -0.010 (0.001)             | -0.010 (0.001)                 | -0.008 (0.001) | -0.009 (0.001)   | -0.013 (0.001)            |
+|             | p = \<0.001                | p = \<0.001                    | p = \<0.001    | p = \<0.001      | p = \<0.001               |
+| Age         | 0.011 (0.003)              | 0.011 (0.003)                  | 0.010 (0.003)  | 0.010 (0.003)    | 0.011 (0.003)             |
+|             | p = \<0.001                | p = \<0.001                    | p = \<0.001    | p = \<0.001      | p = \<0.001               |
+| Num.Obs.    | 5036                       | 5036                           | 5036           | 5036             | 5036                      |
+| R2          | 0.022                      | 0.022                          | 0.021          | 0.018            | 0.017                     |
+| AIC         | 12239.3                    | 14951.5                        | 12396.1        | 14972.5          | 14979.1                   |
+| BIC         | 12291.5                    | 14997.2                        | 12448.3        | 15018.1          | 15024.8                   |
+| Log.Lik.    |                            | -7468.746                      |                | -7479.230        | -7482.571                 |
+| F           |                            | 34.689                         |                | 20.382           | 33.989                    |
+| RMSE        | 1.07                       | 1.07                           | 1.07           | 1.07             | 1.07                      |
 
 With both GLS and GEE GLM approaches, we observe differences in standard
 errors and point estimates when using different correlation structures.
@@ -692,7 +692,4 @@ accounting for within-individual correlations, we cannot estimate
 unobserved individual-specific deviations from those averages. A
 mixed-effects model, by contrast, allows us to estimate a random slope
 for each individual thereby estimating how effective treatment is for a
-particular individual. Put simply: mixed-effects models allow us to
-build a model for each individual whereas linear models with correlated
-error terms limit us to a single model that account for
-within-individual correlations.
+particular individual.

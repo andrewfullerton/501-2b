@@ -244,17 +244,17 @@ geeglm(LogCD4 ~ Treatment + Week + Age,
 
 ```{r}
 models_all <- list(
-  "Compound Symmetry (GLS)" = gls(LogCD4 ~ Treatment + Week + Age, 
+  "GLS Compound Symmetry (SE)" = gls(LogCD4 ~ Treatment + Week + Age, 
                                   data = cd4, 
                                   correlation = corCompSymm(form = ~1 | ID)),
-  "Compound Symmetry (GEE GLM)" = geeglm(LogCD4 ~ Treatment + Week + Age, data = cd4, id = ID,
+  "GEE GLM Compound Symmetry (SE)" = geeglm(LogCD4 ~ Treatment + Week + Age, data = cd4, id = ID,
                                          family = gaussian, corstr = "exchangeable"),
-  "AR1 (GLS)" = gls(LogCD4 ~ Treatment + Week + Age,
+  "GLS AR1 (SE)" = gls(LogCD4 ~ Treatment + Week + Age,
                     data = cd4,
                     correlation = corAR1(form = ~1 | ID)),
-  "AR1 (GEE GLM)" = geeglm(LogCD4 ~ Treatment + Week + Age, data = cd4, id = ID, 
+  "GEE GLM AR1 (SE)" = geeglm(LogCD4 ~ Treatment + Week + Age, data = cd4, id = ID, 
                            family = gaussian, corstr = "ar1"),
-  "Unstructured (GEE GLM)" = geeglm(LogCD4 ~ Treatment + Week + Age, data = cd4, id = ID, 
+  "GEE GLM Unstructured (SE)" = geeglm(LogCD4 ~ Treatment + Week + Age, data = cd4, id = ID, 
                           family = gaussian, corstr = "unstructured")
 )
 
@@ -286,4 +286,4 @@ A key aspect of linear models with correlated error terms is that the specificat
 
 ### Limitations to linear models with correlated error terms
 
-There are also important limitations to note when using linear models with correlated error terms. Linear models with correlated error terms do not explicitly model variability the same way that mixed-effects models do. We may, for example, want to know whether certain therapies are more effective for certain patients. A linear model with correlated error terms limits us to average estimations: while we can estimate how effective a treatment is depending on certain characteristics after accounting for within-individual correlations, we cannot estimate unobserved individual-specific deviations from those averages. A mixed-effects model, by contrast, allows us to estimate a random slope for each individual thereby estimating how effective treatment is for a particular individual. Put simply: mixed-effects models allow us to build a model for each individual whereas linear models with correlated error terms limit us to a single model that account for within-individual correlations.
+There are also important limitations to note when using linear models with correlated error terms. Linear models with correlated error terms do not explicitly model variability the same way that mixed-effects models do. We may, for example, want to know whether certain therapies are more effective for certain patients. A linear model with correlated error terms limits us to average estimations: while we can estimate how effective a treatment is depending on certain characteristics after accounting for within-individual correlations, we cannot estimate unobserved individual-specific deviations from those averages. A mixed-effects model, by contrast, allows us to estimate a random slope for each individual thereby estimating how effective treatment is for a particular individual.
