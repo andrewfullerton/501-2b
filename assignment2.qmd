@@ -1,7 +1,7 @@
 ---
 title: "Assignment 2b"
 format: gfm
-editor: visual
+editor: source
 ---
 
 ```{r}
@@ -50,7 +50,7 @@ ggplot(cd4,  aes(x = Treatment, y = LogCD4)) +
   labs(title = "Log CD4 count by treatment group")
 ```
 
-This plot does not suggest that are any glaring difference between the treatment groups in terms of aggregate CD4 count (although there is a general trend of CD4 count increasing across each treatment group). This is, however, an oversimplified visualization and we should look at how the treatment differ __over time__ to get a better sense of how treatment may effect CD4 count.
+This plot does not suggest that are any glaring difference between the treatment groups in terms of aggregate CD4 count (although there is a general trend of CD4 count increasing across each treatment group). This is, however, an oversimplified visualization and we should look at how the treatment differ **over time** to get a better sense of how treatment may effect CD4 count.
 
 ```{r}
 ggplot(cd4, aes(x = Week, y = LogCD4)) +
@@ -76,7 +76,7 @@ ggplot(cd4, aes(x = Week, y = LogCD4, group = ID)) +
        x = "Weeks", y = "Log CD4")
 ```
 
-With this plot of the individual trajectories, we can see that there are far more observations in the earlier weeks (i.e. dense clusters of black lines/individual trajectories). In later weeks, the lines get increasingly sparse due to loss to follow-up, dropouts, etc. There does not appear to be any notable differences in losses to follow-up based on this plot alone, but it is difficult to tell. It may be the case that some of these differences are due to the lack of balance in the data owing to dropout and/or missing measurements. 
+With this plot of the individual trajectories, we can see that there are far more observations in the earlier weeks (i.e. dense clusters of black lines/individual trajectories). In later weeks, the lines get increasingly sparse due to loss to follow-up, dropouts, etc. There does not appear to be any notable differences in losses to follow-up based on this plot alone, but it is difficult to tell. It may be the case that some of these differences are due to the lack of balance in the data owing to dropout and/or missing measurements.
 
 ```{r}
 cd4 |>
@@ -162,7 +162,7 @@ gls(LogCD4 ~ Treatment + Week + Age + Gender,
     correlation = corCompSymm(form = ~1 | ID)) |> summary()
 ```
 
-Our full model has AIC of 12281.35 and BIC of 12340.05; only one included covariate is not statistically significant (gender). 
+Our full model has AIC of 12281.35 and BIC of 12340.05; only one included covariate is not statistically significant (gender).
 
 ```{r}
 gls(LogCD4 ~ Treatment + Week + Age,
@@ -268,17 +268,17 @@ With both GLS and GEE GLM approaches, we observe differences in standard errors 
 
 A key difference between the models lies in overall model fit. The GLS models consistently outperformed the GEE GLM models in terms of AIC, BIC, and R². This is expected: GLS estimation is optimized for efficiency and uses a full-likelihood estimation method, directly modeling the correlation structure, whereas GEE is optimized for robustness and employs a quasi-likelihood estimation method. The trade-off is that when the correlation structure is specified correctly, GLS produces more efficient estimates but is sensitive to misspecification. On the other hand, GEE provides consistent estimates even when the correlation structure is misspecified.
 
-Despite these methodological differences, the main findings and conclusions remain unchanged: Only treatment 4 (zidovudine plus 400mg of didanosine and 400mg of nevirapine) is significantly better than treatment 1/control (zidovudine alternating monthly), while the other treatments do not show significant differences in efficacy.
+Despite these methodological differences, the main findings and conclusions remain unchanged: Only treatment 4 (zidovudine plus 400mg of didanosine and 400mg of nevirapine) is significantly better than treatment 1 (zidovudine alternating monthly), while the other treatments do not show significant differences in efficacy.
 
 ## 3) Discuss the research questions you are able to explore using a linear model with correlated error terms
 
-1.  How effective are different therapies in reducing CD4 count?
+1.  How effective are different therapies?
 
 Linear models with correlated error terms are well-suited for modeling the efficacy of different therapies. By incorporating correlated error terms (via GEE or GLS), these models provide more accurate and valid standard error estimates by accounting for within-subject correlation due to repeated measurements. In contrast, a standard linear model without correlated error terms assumes no correlation between measurements from the same subject, which can lead to artificially low standard errors and narrow confidence intervals.
 
-2.  How does the effectiveness of antiretroviral therapies in reducing CD4 count differ according to patient characteristics (treatment effect heterogeneity)?
+2.  How do the effectiveness of therapies differ according to patient characteristics (treatment effect heterogeneity)?
 
-Linear models with correlated error terms are suitable for comparing therapies wherein the effects of therapies may differ according to certain patient characteristics. While not the focus of this analysis, linear models with correlated error terms (like all linear models) allow for exploration of effect modification via the inclusion of interaction terms. It may, for instance, be the case that some treatments are particularly effective for younger patients while others are particularly effective for older patients. 
+Linear models with correlated error terms are suitable for comparing therapies wherein the effects of therapies may differ according to certain patient characteristics. While not the focus of this analysis, linear models with correlated error terms (like all linear models) allow for exploration of effect modification via the inclusion of interaction terms. It may, for instance, be the case that some treatments are particularly effective for younger patients while others are particularly effective for older patients.
 
 3.  How are observations correlated with one another?
 
@@ -286,4 +286,4 @@ A key aspect of linear models with correlated error terms is that the specificat
 
 ### Limitations to linear models with correlated error terms
 
-There are also important limitations to note when using linear models with correlated error terms. Linear models with correlated error terms do not explicitly model variability the same way that mixed-effects models do. We may, for example, want to know whether certain therapies are more effective for certain patients. A linear model with correlated error terms limits us to average estimations: while we can estimate how effective a treatment is depending on certain characteristics after accounting for within-individual correlations, we cannot estimate unobserved individual-specific deviations from those averages. A mixed-effects model, by contrast, allows us to estimate a random slope for each individual thereby estimating how effective treatment is for a particular individual.
+There are also important limitations to note when using linear models with correlated error terms. Linear models with correlated error terms do not explicitly model variability the same way that mixed-effects models do. We may, for example, want to know whether certain therapies are more effective for certain patients. A linear model with correlated error terms limits us to average estimations: while we can estimate how effective a treatment is depending on certain characteristics after accounting for within-individual correlations, we cannot estimate unobserved individual-specific deviations from those averages. A mixed-effects model, by contrast, allows us to estimate a random slope for each individual thereby estimating how effective treatment is for a particular individual. Put simply: mixed-effects models allow us to build a model for each individual whereas linear models with correlated error terms limit us to a single model that account for within-individual correlations.

@@ -642,12 +642,12 @@ even when the correlation structure is misspecified.
 Despite these methodological differences, the main findings and
 conclusions remain unchanged: Only treatment 4 (zidovudine plus 400mg of
 didanosine and 400mg of nevirapine) is significantly better than
-treatment 1/control (zidovudine alternating monthly), while the other
-treatments do not show significant differences in efficacy.
+treatment 1 (zidovudine alternating monthly), while the other treatments
+do not show significant differences in efficacy.
 
 ## 3) Discuss the research questions you are able to explore using a linear model with correlated error terms
 
-1.  How effective are different therapies in reducing CD4 count?
+1.  How effective are different therapies?
 
 Linear models with correlated error terms are well-suited for modeling
 the efficacy of different therapies. By incorporating correlated error
@@ -658,9 +658,8 @@ without correlated error terms assumes no correlation between
 measurements from the same subject, which can lead to artificially low
 standard errors and narrow confidence intervals.
 
-2.  How does the effectiveness of antiretroviral therapies in reducing
-    CD4 count differ according to patient characteristics (treatment
-    effect heterogeneity)?
+2.  How do the effectiveness of therapies differ according to patient
+    characteristics (treatment effect heterogeneity)?
 
 Linear models with correlated error terms are suitable for comparing
 therapies wherein the effects of therapies may differ according to
@@ -693,4 +692,7 @@ accounting for within-individual correlations, we cannot estimate
 unobserved individual-specific deviations from those averages. A
 mixed-effects model, by contrast, allows us to estimate a random slope
 for each individual thereby estimating how effective treatment is for a
-particular individual.
+particular individual. Put simply: mixed-effects models allow us to
+build a model for each individual whereas linear models with correlated
+error terms limit us to a single model that account for
+within-individual correlations.
