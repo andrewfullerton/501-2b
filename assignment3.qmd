@@ -1,0 +1,138 @@
+---
+title: "Assignment 3"
+format: docx
+editor: source
+---
+
+```{r}
+# Set global chunk options for error handling
+knitr::opts_chunk$set(error = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(broom)
+library(lme4)
+library(geepack)
+library(nlme)
+```
+
+```{r}
+cd4 <- read_csv("data/cd4data.csv")
+
+cd4 <- cd4 |>
+  mutate(
+    Treatment = as.factor(Treatment),
+    Gender = as.factor(Gender)
+  )
+
+glimpse(cd4)
+```
+
+## Re-model the data using GLM and GEE GLS
+### GLS (compound symmetry)
+
+```{r}
+gls(
+  LogCD4 ~ Treatment*Week + Age + Gender, 
+  data = cd4, 
+  correlation = corCompSymm(form = ~1 | ID)
+) |> summary()
+```
+
+### GLS (AR1)
+
+```{r}
+gls(
+  LogCD4 ~ Treatment*Week + Age + Gender,
+  data = cd4,
+  correlation = corAR1(form = ~1 | ID)
+) |> summary()
+```
+
+### GEE (compound symmetry)
+```{r}
+geeglm(
+  LogCD4 ~ Treatment*Week + Age + Gender,
+  data = cd4,
+  id = ID,
+  family = gaussian,
+  corstr = "exchangeable"
+) |> tidy()
+```
+
+### GEE (AR1)
+
+```{r}
+geeglm(
+  LogCD4 ~ Treatment*Week + Age + Gender,
+  data = cd4,
+  id = ID,
+  family = gaussian,
+  corstr = "ar1"
+) |> tidy()
+```
+
+### GEE (unstructured)
+
+```{r}
+geeglm(
+  LogCD4 ~ Treatment*Week + Age + Gender,
+  data = cd4,
+  id = ID,
+  family = gaussian,
+  corstr = "unstructured"
+) |> tidy()
+```
+
+## Model the data using linear mixed effects model
+### Random intercept model
+
+In this random intercept specification, each individuals in the `cd4` dataset has their own baseline while the slope remains shared across the entire sample. Put another way: each individual has a unique baseline log CD4 count (which makes good conceptual sense), but the effect of a given treatment on log CD4 count is assumed to be same across individuals.
+
+```{r}
+lmer(
+  LogCD4 ~ Treatment*Week + Age + Gender + (1 | ID),
+  data = cd4
+) |> summary()
+```
+
+```{r}
+lmer(
+  LogCD4 ~ Treatment*Week + Age + Gender + (1 + Age | ID),
+  data = cd4
+) |> summary()
+```
+
+
+## 2) Compare the results obtained from GEE GLM and GLS with the mixed effects model
+
+```{r}
+models <- list(
+  "GLS Compound Symmetry (SE)" = gls(LogCD4 ~ Treatment*Week + Age + Gender, 
+                                  data = cd4, 
+                                  correlation = corCompSymm(form = ~1 | ID)),
+  "GEE GLM Compound Symmetry (SE)" = geeglm(LogCD4 ~ Treatment + Week + Age, 
+                                            data = cd4, id = ID,
+                                            family = gaussian, 
+                                            corstr = "exchangeable"),
+  "GLS AR1 (SE)" = gls(LogCD4 ~ Treatment*Week + Age + Gender,
+                       data = cd4,
+                       correlation = corAR1(form = ~1 | ID)),
+  "GEE GLM AR1 (SE)" = geeglm(LogCD4 ~ Treatment*Week + Age + Gender, data = cd4, 
+                              id = ID, 
+                              family = gaussian, corstr = "ar1"),
+  "GEE GLM Unstructured (SE)" = geeglm(LogCD4 ~ Treatment*Week + Age + Gender, 
+                                       data = cd4, id = ID, 
+                                       family = gaussian, corstr = "unstructured"),
+  "Mixed Effects (Random Intercept) (SE)" = lmer(LogCD4 ~ Treatment*Week + Age + Gender + (1 | ID),
+                                            data = cd4)
+)
+
+modelsummary::modelsummary(models,
+                           digits = 3,
+                           estimate = "{estimate} ({std.error})",
+                           statistic = "p = {p.value}")
+```
+
+In general, the overall conclusions of our analysis did not change substantively when a GEE GLM vs. GLS vs. mixed effects model was used. In both cases, there was not a significant 
