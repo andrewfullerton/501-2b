@@ -29,62 +29,6 @@ cd4 <- cd4 |>
 glimpse(cd4)
 ```
 
-## Re-model the data using GLM and GEE GLS
-### GLS (compound symmetry)
-
-```{r}
-gls(
-  LogCD4 ~ Treatment*Week + Age + Gender, 
-  data = cd4, 
-  correlation = corCompSymm(form = ~1 | ID)
-) |> summary()
-```
-
-### GLS (AR1)
-
-```{r}
-gls(
-  LogCD4 ~ Treatment*Week + Age + Gender,
-  data = cd4,
-  correlation = corAR1(form = ~1 | ID)
-) |> summary()
-```
-
-### GEE (compound symmetry)
-```{r}
-geeglm(
-  LogCD4 ~ Treatment*Week + Age + Gender,
-  data = cd4,
-  id = ID,
-  family = gaussian,
-  corstr = "exchangeable"
-) |> tidy()
-```
-
-### GEE (AR1)
-
-```{r}
-geeglm(
-  LogCD4 ~ Treatment*Week + Age + Gender,
-  data = cd4,
-  id = ID,
-  family = gaussian,
-  corstr = "ar1"
-) |> tidy()
-```
-
-### GEE (unstructured)
-
-```{r}
-geeglm(
-  LogCD4 ~ Treatment*Week + Age + Gender,
-  data = cd4,
-  id = ID,
-  family = gaussian,
-  corstr = "unstructured"
-) |> tidy()
-```
-
 ## Model the data using linear mixed effects model
 ### Random intercept model
 
@@ -97,22 +41,39 @@ lmer(
 ) |> summary()
 ```
 
+PROVIDE INTERPRETATION
+
 ```{r}
 lmer(
-  LogCD4 ~ Treatment*Week + Age + Gender + (1 + Age | ID),
+  LogCD4 ~ Treatment*Week + Age + Gender + (1 + Week | ID),
   data = cd4
 ) |> summary()
 ```
 
+PROVIDE INTERPRETATION
 
-## 2) Compare the results obtained from GEE GLM and GLS with the mixed effects model
+## 2) Discuss the research questions you are able to explore using mixed effects models
+
+1. How much do individual differences affect treatment efficacy?
+
+The random intercept quantifies between-individual variation in baseline CD4 levels. If this variance is large, it suggests that some individuals start with inherently higher/lower CD4 counts, beyond what is explained by fixed effects (treatment, age, gender). This could indicate biological or behavioral differences not captured by observed variables.
+
+2. Does responsiveness to treatment over time differ between individuals?
+
+By including a random slope for week, I can investigate whether the rate of change in log CD4 count varies based on both observed or unobserved individual characteristics. One of the strengths of a mixed effects approach is that even if it is unclear exactly what individual-level factors are responsible for variation, it is nonetheless possible to account for individual-level variation.
+
+3. Does treatment efficacy/responsiveness over time differ by age?
+
+While the main approach for this analysis was to account for clustering within-individuals, it is also possible to consider other sources of clustering such as age. It may, for example, be the case that individuals who are more similar in age will have more similar responses to treatment compared to individuals who are more different in age. Provided the data can support it, a mixed effects model can be used to explore multiple sources of clustering (i.e. random effects) simultaneously or separately.
+
+## 3) Compare the results obtained from GEE GLM and GLS with the mixed effects model
 
 ```{r}
 models <- list(
   "GLS Compound Symmetry (SE)" = gls(LogCD4 ~ Treatment*Week + Age + Gender, 
                                   data = cd4, 
                                   correlation = corCompSymm(form = ~1 | ID)),
-  "GEE GLM Compound Symmetry (SE)" = geeglm(LogCD4 ~ Treatment + Week + Age, 
+  "GEE GLM Compound Symmetry (SE)" = geeglm(LogCD4 ~ Treatment*Week + Age, 
                                             data = cd4, id = ID,
                                             family = gaussian, 
                                             corstr = "exchangeable"),
@@ -125,8 +86,10 @@ models <- list(
   "GEE GLM Unstructured (SE)" = geeglm(LogCD4 ~ Treatment*Week + Age + Gender, 
                                        data = cd4, id = ID, 
                                        family = gaussian, corstr = "unstructured"),
-  "Mixed Effects (Random Intercept) (SE)" = lmer(LogCD4 ~ Treatment*Week + Age + Gender + (1 | ID),
-                                            data = cd4)
+  "Random Intercept (SE)" = lmer(LogCD4 ~ Treatment*Week + Age + Gender + (1 | ID),
+                                            data = cd4),
+  "Random Intercept/Slope (SE)" = lmer(LogCD4 ~ Treatment*Week + Age + Gender + (1 + Week | ID),
+                                               data = cd4)
 )
 
 modelsummary::modelsummary(models,
@@ -135,4 +98,12 @@ modelsummary::modelsummary(models,
                            statistic = "p = {p.value}")
 ```
 
-In general, the overall conclusions of our analysis did not change substantively when a GEE GLM vs. GLS vs. mixed effects model was used. In both cases, there was not a significant 
+The overall conclusions of our analysis did not change when a GEE vs. GLS vs. mixed effects model was used. In all models, only treatment 4 (zidovudine plus 400mg of didanosine and 400mg of nevirapine) is significantly better than treatment 1 (zidovudine alternating monthly), while the other treatments do not show significant differences in efficacy. I imagine that this is, in part, a function of the fact that this data is from a randomized controlled trial; this model is really just accounting for any residual imbalance/confounding remaining after randomization rather than handling the full adjustment of these confounders. If this data was from an observational study rather than a controlled study, we might expect some slightly larger departures and discrepancies between model specifications. Standard errors were generally comparable between models. 
+
+The random intercept model produced point estimates (fixed effects) and standard errors that were most consistent with those estimated by the GEE and GLS models using a compound symmetric correlation structure. There is a plausible conceptual explanation for this: a compound symmetric correlation structure assumes that (i) equal correlation between all repeated measures of the same individual, and (ii) equal variance across time points. While the assumptions differ slightly, a random intercept implicitly enforces that while baseline CD4 count varies between individuals, the slope (rate of CD4 count change) does not. Measures from the same individual will thus be much more similar than measured from different individuals much like how compound symmetry enforces equal correlations of observations with an individual. 
+
+With the addition of a random slope for the week, the model implicitly allowed for individual differences in log CD4 count change over time in response to treatment. Whereas the random intercept model was most consistent with the compound symmetry GLS and GEE models, the random slope random intercept model was much less consistent with the compound symmetry models and slightly more consistent with the estimated produced by the unstructured models. This too makes conceptual sense. By adding a random slope for week, we allow that the rate of CD4 count change can differ between individuals; some individuals may respond to treatment very quickly while others may respond far more slowly. While not an exact match, this implicitly allows for the correlation between measurements within an individual to vary based on temporal proximity; in theory, the unstructured correlation structure should be arriving at a similar correlation structure which is also estimated from the data itself rather than pre-specified like AR1 or the compound symmetry correlation structure.
+
+Beyond the results, a mixed effects model offers two key advantages over GEE or GLS: (i) it does not require a pre-specified correlation structure, and (ii) its individual-level random effects are directly interpretable. While GEE or GLS with compound symmetry or AR(1) can yield valid estimates, their accuracy depends heavily on correctly specifying the working correlation structure. If I prefer not to pre-specify this structure, using an unstructured correlation in GEE or GLS allows for (i) but lacks an easily interpretable representation of individual-level variation. In contrast, a mixed effects model naturally captures both within-individual and between-individual relationships.
+
+
