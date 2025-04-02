@@ -29,10 +29,83 @@ cd4 <- cd4 |>
 glimpse(cd4)
 ```
 
-## Model the data using linear mixed effects model
-### Random intercept model
+## 0) Explore the data
 
-In this random intercept specification, each individuals in the `cd4` dataset has their own baseline while the slope remains shared across the entire sample. Put another way: each individual has a unique baseline log CD4 count (which makes good conceptual sense), but the effect of a given treatment on log CD4 count is assumed to be same across individuals.
+Before fitting a model, we should do some initial exploratory data analysis to ensure that we have some intuition for the relationship we are modelling. First, we'll plot the main relationship of interest. 
+
+```{r}
+ggplot(data = cd4, aes(x = Week, y = LogCD4)) +
+  geom_smooth(method = "loess", se = TRUE) + 
+  facet_wrap(~Treatment) +
+  theme_minimal()
+```
+
+Evident from this plot are both some general differences in the relationship between the four different treatments and CD4 count as well as some difference in their relationship over time. Both treatments 1 and 2 display a fairly consistent downward relationship wherein log CD4 count steadily decreases over the forty weeks of follow-up. Treatments 3 and 4, by contrast, seem to display an uptick in CD4 count over the first 10-15 weeks of follow-up before taking on the same downward trend seen in treatments 1 and 2.
+
+Now that we have a sense of the main relationship of interest, we should explore how some key covariates may be affecting the relationship. Let's start with gender:
+
+```{r}
+cd4 |> 
+  mutate(Gender = case_when(
+    Gender == "1" ~ "Men",
+    Gender == "0" ~ "Women")) |> 
+  ggplot(aes(x = Week, y = LogCD4)) +
+  geom_smooth(method = "loess", se = TRUE) + 
+  facet_grid(Treatment ~ Gender) +
+  theme_minimal()
+```
+
+The overall trends here seem to differ somewhat between men and women; this is most notable in treatment 4 where log CD4 count seems to continue rising (or at least stay fairly constant) across all 40 weeks in women, but peaks around 15 weeks of follow-up before declining in men. What is perhaps most  noteworthy is the wider standard errors in women compared to men. We should investigate this more:
+
+```{r}
+cd4 |>  
+  mutate(Gender = case_when(
+    Gender == "1" ~ "Men",
+    Gender == "0" ~ "Women"
+  )) |>  
+  group_by(Gender) |>  
+  summarise(n = n())
+```
+
+This explains the difference in standard errors between men and women. Our data is heavily imbalanced with respect to gender which, in turn, means that we have less statistical power to study the women in the sample compared to the men (resulting in more uncertainty in our estimates).
+
+We should also explore age. Since age is a continuous variable, I'm going to bucket it into three categories to enable a more interpretable visualization.
+
+```{r}
+cd4 |>  
+  mutate(Age_cat = case_when(
+    Age < 30 ~ "<30",
+    Age >= 30 & Age < 40  ~ "30-40",
+    Age >= 40 & Age < 50 ~ "40-50",
+    Age >= 50 ~ "50+"
+  )) |> 
+  ggplot(aes(x = Week, y = LogCD4)) +
+  geom_smooth(method = "loess", se = TRUE) + 
+  facet_grid(Treatment ~ Age_cat) +
+  theme_minimal()
+```
+
+The general trend seen in the first plot seems to persist here too with treatments 1 and 2 showing a more steady decline in CD4 count over the follow-up period while treatment 3 and 4 display a stronger increase in CD4 count in the first 10-15 weeks. Interestingly, CD4 count seems to be generally higher among individuals in the 50+ category compared to the other age groups. Once again, it's noteworthy that the standard errors are much wider among under 30 and those over 40. We should investigate this further as well:
+
+```{r}
+cd4 |>  
+  mutate(Age_cat = case_when(
+    Age < 30 ~ "<30",
+    Age >= 30 & Age < 40  ~ "30-40",
+    Age >= 40 & Age < 50 ~ "40-50",
+    Age >= 50 ~ "50+"
+  )) |> 
+  group_by(Age_cat) |> 
+  summarise(n = n())
+```
+
+Once again, we see that the majority of our sample is found in the 30-40 age category or the 40-50 age category.
+
+## 1) Model the data using a linear mixed effects model
+
+Since the exploratory data analysis suggested some patterned differences in the relationship between treatment and CD4 count over time based on gender and age, both covariates will be included in the mixed effects model.
+
+### Random intercept model
 
 ```{r}
 lmer(
@@ -41,7 +114,7 @@ lmer(
 ) |> summary()
 ```
 
-PROVIDE INTERPRETATION
+In this random intercept specification, each individual in the `cd4` dataset has their own baseline while the slope remains shared across the entire sample. Put another way: each individual has a unique baseline log CD4 count (which makes good conceptual sense), but the effect of a given treatment on log CD4 count over time is assumed to be the same across individuals. This may not be an entirely valid assumption: there may be some individuals who are more or less responsive to treatment based on unobserved covariates. To explore this, we can include a random slope for `Week` in our model.
 
 ```{r}
 lmer(
@@ -50,7 +123,7 @@ lmer(
 ) |> summary()
 ```
 
-PROVIDE INTERPRETATION
+First, it should be noted that this model failed to converge. Second, the low variance of the random effect for week should be noted; this suggests that the effect (slope) of week does not seem to vary much across individuals (and may be, in part, responsible for the failed convergence). No random effect will be included for week in the final model resulting in a final random intercept model.
 
 ## 2) Discuss the research questions you are able to explore using mixed effects models
 
@@ -64,7 +137,7 @@ By including a random slope for week, I can investigate whether the rate of chan
 
 3. Does treatment efficacy/responsiveness over time differ by age?
 
-While the main approach for this analysis was to account for clustering within-individuals, it is also possible to consider other sources of clustering such as age. It may, for example, be the case that individuals who are more similar in age will have more similar responses to treatment compared to individuals who are more different in age. Provided the data can support it, a mixed effects model can be used to explore multiple sources of clustering (i.e. random effects) simultaneously or separately.
+While the main approach for this analysis was to account for clustering within-individuals, it is also possible to consider other sources of clustering such as age. It may, for example, be the case that individuals who are more similar in age will have more similar responses to treatment. Provided the data can support it, a mixed effects model can be used to explore multiple sources of clustering (i.e. random effects) simultaneously or separately.
 
 ## 3) Compare the results obtained from GEE GLM and GLS with the mixed effects model
 
@@ -87,9 +160,7 @@ models <- list(
                                        data = cd4, id = ID, 
                                        family = gaussian, corstr = "unstructured"),
   "Random Intercept (SE)" = lmer(LogCD4 ~ Treatment*Week + Age + Gender + (1 | ID),
-                                            data = cd4),
-  "Random Intercept/Slope (SE)" = lmer(LogCD4 ~ Treatment*Week + Age + Gender + (1 + Week | ID),
-                                               data = cd4)
+                                            data = cd4)
 )
 
 modelsummary::modelsummary(models,
@@ -105,5 +176,4 @@ The random intercept model produced point estimates (fixed effects) and standard
 With the addition of a random slope for the week, the model implicitly allowed for individual differences in log CD4 count change over time in response to treatment. Whereas the random intercept model was most consistent with the compound symmetry GLS and GEE models, the random slope random intercept model was much less consistent with the compound symmetry models and slightly more consistent with the estimated produced by the unstructured models. This too makes conceptual sense. By adding a random slope for week, we allow that the rate of CD4 count change can differ between individuals; some individuals may respond to treatment very quickly while others may respond far more slowly. While not an exact match, this implicitly allows for the correlation between measurements within an individual to vary based on temporal proximity; in theory, the unstructured correlation structure should be arriving at a similar correlation structure which is also estimated from the data itself rather than pre-specified like AR1 or the compound symmetry correlation structure.
 
 Beyond the results, a mixed effects model offers two key advantages over GEE or GLS: (i) it does not require a pre-specified correlation structure, and (ii) its individual-level random effects are directly interpretable. While GEE or GLS with compound symmetry or AR(1) can yield valid estimates, their accuracy depends heavily on correctly specifying the working correlation structure. If I prefer not to pre-specify this structure, using an unstructured correlation in GEE or GLS allows for (i) but lacks an easily interpretable representation of individual-level variation. In contrast, a mixed effects model naturally captures both within-individual and between-individual relationships.
-
 
